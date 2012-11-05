@@ -1,0 +1,37 @@
+Hokie Bucket List
+Download link http://vtnetapps.googlecode.com/files/Hokie_Bucketlist.apk
+
+==Design Decisions==
+When designing this application, I first struggled choosing a topic.  The idea came to me after talking to a friend about how few 'mandatory' things I have done during my time at VT.  She sent me a link to the list at http://www.saa.alumni.vt.edu/bucketlist/hokiebucketlist1872.pdf.  I then set about deciding what a necessary API would look like.  Clearly we would need:
+  # Users
+    * Creating accounts
+    * Completing items
+    * Retrieving completed items
+  # Items
+    * Defining items
+
+For hosting, a free Heroku application would suffice.  I found a helpful Tornado/Heroku starter repository on GitHub at https://github.com/mikedory/Tornado-Heroku-Helpers and used that to get started.  I used ClearDB's free MySQL host and then wired up the app.
+
+The API is:
+GET only:
+  */createuser
+    * username
+  */definiteitem
+    * itemid (from the bucket list)
+    * description
+  */viewitems
+    * username
+POST only:
+  */completeitem
+    * username
+    * itemid
+Images are accessible by /uploads/username/itemnumber.filetype
+
+Obviously there's no password security here, but it wasn't necessary for this MVP.
+
+To complete an item, execute an Android share on a picture on the phone, select the app as the processor, and enter a username and item number.  To view items, launch the main app from the apps screen, enter a username, and then view completed items.
+Only the following items are defined so far:
+http://i.imgur.com/2UuAO.png
+
+
+Screenshots available at http://imgur.com/a/faji3
