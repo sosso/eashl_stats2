@@ -22,7 +22,6 @@ def check_games():
         else: #we have already processed the game, ignore it
             continue
 
-
 def process_game(game_id):
     game_url = base_game_details_url % game_id
     game_req = urllib2.Request(game_url, None, headers)
