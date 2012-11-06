@@ -24,6 +24,8 @@ def check_games():
     games_list_soup = BeautifulSoup(games_list_html)
 
     games = games_list_soup.findAll('div', id=lambda x: x and x.startswith('match-detail-container'))
+    game_times = games_list_soup.findAll('div', {'class':lambda x: x and x.startswith('strong small')})
+    #parent(match detail) == parent(parent(parent(parent(time))))
     should_update_spreadsheet = False
     for game in games:
         try:
