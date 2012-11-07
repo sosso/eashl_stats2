@@ -12,8 +12,8 @@ headers = { 'User-Agent' : 'Mozilla/5.0' }
 base_game_details_url = 'http://www.easportsworld.com/en_US/clubs/partial/401A0001/273/match-results/details?match_id=%s&type=all'
 
 def check_games():
-#    games_list_req = urllib2.Request('https://dl.dropbox.com/u/6996716/simple_games_list.htm', None, headers)
-    games_list_req = urllib2.Request('http://www.easportsworld.com/en_US/clubs/partial/401A0001/273/match-results/', None, headers)
+    games_list_req = urllib2.Request('https://dl.dropbox.com/u/6996716/simple_games_list.htm', None, headers)
+#    games_list_req = urllib2.Request('http://www.easportsworld.com/en_US/clubs/partial/401A0001/273/match-results/', None, headers)
 
     try:
         logger.info('Fetching games list . . .')
@@ -27,7 +27,32 @@ def check_games():
     game_times = games_list_soup.findAll('div', {'class':lambda x: x and x.startswith('strong small')})
     #parent(match detail) == parent(parent(parent(parent(time))))
     should_update_spreadsheet = False
+    nightly_end = None
+    start_index = None
+    end_index = None
+    have_updated_nightly_totals = False
     for game in games:
+        index = games.index(game)
+        game.game_time = filter(lambda gametime: gametime.parent.parent.parent.parent.parent == game.parent, game_times)[0].contents[0][6:]#strips the Time: from Time: #:## AM
+        game_score = game.parent.findAll('div', {'class':lambda x: x and x.startswith('match-result-score')})[0].contents[0].split(" - ")
+        game.our_score = int(game_score[0])
+        game.their_score = int(game_score[1])
+        if int(game_score[0]) > int(game_score[1]):
+            game.win = True
+        else:
+            game.win = False
+        if nightly_end is None:
+            nightly_end = game.game_time
+            end_index = index
+        elif not have_updated_nightly_totals:
+            if index > 0:
+                previous_gametime = games[index - 1].game_time
+                if int(game.game_time.split(":")[0]) > int(previous_gametime.split(":")[0]):
+                    start_index = games.index(game) - 1
+                    nightly_games = games[end_index:start_index]
+                    process_nightly_games(nightly_games)
+                    pass
+
         try:
             game_id = game['id'][23:]#strips game id from match-detail-container-36028797029524422
             game = Session().query(Game).filter_by(match_id=game_id).first()
@@ -40,6 +65,26 @@ def check_games():
                 pass
         except:
             pass
+
+def process_nightly_games(nightly_games_list):
+    games_played = len(nightly_games_list)
+    if games_played > 0:
+        wins = 0
+        losses = 0
+        overtime_losses = '?'
+        goals_for = 0
+        goals_against = 0
+
+        for game in games_played:
+            if game.win: wins += 1
+            goals_for += game.our_score
+            goals_against += game.their_score
+        losses = games_played - wins
+        diff = goals_for - goals_against
+        try: win_percentage = float(wins / games_played)
+        except: win_percentage = 0
+        gc = gspread.login('xtremerunnerars@gmail.com', 'muatkienjwxfpnxn')
+        stats = [games_played, wins, losses, overtime_losses, goals_for, goals_against, diff, win_percentage]
 
 def process_game(game_id):
     game_url = base_game_details_url % game_id
